@@ -8,7 +8,7 @@ Installation
 ----
 
     make
-    ./qt-capture
+    ./txtcam
 
 
 Screenshot

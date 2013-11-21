@@ -7,6 +7,8 @@ By Dennis Hotson
 Installation
 ----
 
+    git clone git@github.com:dhotson/txtcam.git
+    cd txtcam
     make
     ./txtcam
 

@@ -24,7 +24,7 @@ It'd be great to make this work basically like skype for your terminal.
 
 - Network client and server
 - Audio
-- 24-bit "true color" support (iTerm2 nightlies [currently support 24-bit color](https://code.google.com/p/iterm2/issues/detail?id=218), hopefully in a stable release very soon)
+- 24-bit "true color" support (iTerm2 nightlies [currently support 24-bit color](https://code.google.com/p/iterm2/issues/detail?id=218), hopefully it's in a stable release very soon)
 - Preserve aspect ratio
 
 Contributions

@@ -2,13 +2,14 @@ txtcam — webcam for your OSX terminal
 ====
 
 By [Dennis Hotson](mailto:dennis.hotson@gmail.com)
+Color mode by [frytaz] (@frytaz1)
 
-![](http://i.imgur.com/yeWqDra.png)
+![](https://s3.amazonaws.com/f.cl.ly/items/063S2A0b2b3w3T2Z3J0q/Image%202013.11.25%2022%3A22%3A23.png)
 
 Installation
 ----
-
-    git clone https://github.com/dhotson/txtcam.git
+	(Get latest nightly build of iTerm2)
+    git clone https://github.com/frytaz/txtcam.git
     cd txtcam
     make
     ./txtcam

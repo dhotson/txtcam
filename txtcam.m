@@ -14,117 +14,99 @@
 @implementation myThread:NSThread
 
 - (void)captureOutput:(QTCaptureOutput *)captureOutput didOutputVideoFrame:(CVImageBufferRef)videoFrame withSampleBuffer:(QTSampleBuffer *)sampleBuffer fromConnection:(QTCaptureConnection *)connection {
-  @synchronized (self) {
-    CIImage* image = [CIImage imageWithCVImageBuffer:videoFrame];
-    CGSize size = image.extent.size;
-    NSBitmapImageRep *rep = [[NSBitmapImageRep alloc] initWithCIImage: image];
+	@synchronized (self) {
+		CIImage *image = [CIImage imageWithCVImageBuffer:videoFrame];
+		CGSize size = image.extent.size;
+		NSBitmapImageRep *rep = [[NSBitmapImageRep alloc] initWithCIImage:image];
 
-    int x;
-    int y;
-    float bg;
-    float fg;
-    float tmp;
-    float mod;
-    char* chr;
+		int x;
+		int y;
 
-    printf("\033[0;0H"); // Move cursor to top right
-    for (y=0; y<size.height; y += 1) {
-      for (x=0; x<size.width; x++) {
-        CGFloat b = [[rep colorAtX:x y:y] brightnessComponent];
+		int red;
+		int green;
+		int blue;
 
-        bg = (b * 23 + 232);
-        fg = fmin(255, bg+1);
-        mod = fmodf(bg, 1.0);
+		printf("\033[0;0H"); // Move cursor to top right
 
-        if (mod < 0.2) {
-          chr = " ";
-        } else if (mod < 0.4) {
-          chr = "░";
-        } else if (mod < 0.6) {
-          chr = "▒";
-        } else if (mod < 0.8) {
-          tmp = bg; bg = fg; fg = tmp;
-          chr = "▒";
-        } else {
-          tmp = bg; bg = fg; fg = tmp;
-          chr = "░";
-        }
+		for (y=0; y<size.height; y += 1) {
+			for (x=0; x<size.width; x++) {
+				NSColor *color = [rep colorAtX:x y:y];
 
-        printf("\033[48;5;%im\033[38;5;%im%s", (int)bg, (int)fg, chr);
-      }
-      if (y<size.height-1) printf("\n");
-    }
-  }
+				red = (int)([color redComponent] * 255);
+				green =	(int)([color greenComponent] * 255);
+				blue = (int)([color blueComponent] * 255);
 
+				printf("\033[48;2;%i;%i;%im ", red, green, blue);
+			}
+
+			if (y<size.height-1) printf("\n");
+		}
+	}
 }
 
 - (void)main {
-  struct winsize max;
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	struct winsize max;
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
-  NSArray *a = [QTCaptureDevice inputDevicesWithMediaType:QTMediaTypeVideo];
-  QTCaptureDevice *cam = [a objectAtIndex:0];
-  NSError *err;
-  if ([cam open:&err] != YES) {
-    NSLog(@"Error opening camera: %@", err);
-  }
-  QTCaptureDeviceInput *in = [[QTCaptureDeviceInput alloc] initWithDevice:cam];
-  QTCaptureSession *session = [[QTCaptureSession alloc] init];
-  if ([session addInput:in error:&err] != YES) {
-    NSLog(@"Error adding input to capture session: %@", err);
-  }
-  // Grab decompressed output
-  QTCaptureVideoPreviewOutput *previewOutput;
-  previewOutput = [[QTCaptureVideoPreviewOutput alloc] init];
-  [previewOutput setPixelBufferAttributes: [NSDictionary dictionaryWithObjectsAndKeys:
-    [NSNumber numberWithInt:64], (id)kCVPixelBufferWidthKey,
-    [NSNumber numberWithInt:48/2], (id)kCVPixelBufferHeightKey,
-    nil]];
+	NSArray *a = [QTCaptureDevice inputDevicesWithMediaType:QTMediaTypeVideo];
+	QTCaptureDevice *cam = [a objectAtIndex:0];
+	NSError *err;
 
-  [previewOutput setDelegate:self];
-  int success = [session addOutput:previewOutput error:&err];
-  if (!success) {
-    NSLog(@"Error adding preview output to capture session: %@", err);
-    exit(1);
-  }
+	if ([cam open:&err] != YES) {
+		NSLog(@"Error opening camera: %@", err);
+	}
 
-  printf("\033[2J"); // clear screen
-  printf( "\x1B[?25l"); // disable cursor
-  [session startRunning];
+	QTCaptureDeviceInput *in = [[QTCaptureDeviceInput alloc] initWithDevice:cam];
+	QTCaptureSession *session = [[QTCaptureSession alloc] init];
 
-  while(1) {
-    sleep(1);
+	if ([session addInput:in error:&err] != YES) {
+		NSLog(@"Error adding input to capture session: %@", err);
+	}
 
-    // Update preview size based on size of terminal
-    ioctl(0, TIOCGWINSZ , &max);
-    [previewOutput setPixelBufferAttributes: [NSDictionary dictionaryWithObjectsAndKeys:
-      [NSNumber numberWithInt:max.ws_col], (id)kCVPixelBufferWidthKey,
-      [NSNumber numberWithInt:max.ws_row], (id)kCVPixelBufferHeightKey,
-      nil]];
+	// Grab decompressed output
+	QTCaptureVideoPreviewOutput *previewOutput;
+	previewOutput = [[QTCaptureVideoPreviewOutput alloc] init];
+	[previewOutput setPixelBufferAttributes:@{(id)kCVPixelBufferWidthKey: @(64), (id)kCVPixelBufferHeightKey: @(48/2)}];
 
-    sleep(1);
-  }
-  [pool release];
+	previewOutput.delegate = self;
+	int success = [session addOutput:previewOutput error:&err];
+	if (!success) {
+		NSLog(@"Error adding preview output to capture session: %@", err);
+		exit(1);
+	}
+
+	printf("\033[2J"); // clear screen
+	printf( "\x1B[?25l"); // disable cursor
+	[session startRunning];
+
+	while(1) {
+		sleep(1);
+
+		// Update preview size based on size of terminal
+		ioctl(0, TIOCGWINSZ , &max);
+		[previewOutput setPixelBufferAttributes:@{(id)kCVPixelBufferWidthKey: @(max.ws_col), (id)kCVPixelBufferHeightKey: @(max.ws_row)}];
+
+		sleep(1);
+	}
+	[pool release];
 }
 
 @end
 
 void intHandler() {
-  printf("\033[0;0H"); // Move cursor to top right
-  printf("\033[2J"); // clear screen
-  printf("\x1B[?25h"); // re-enable cursor
-  exit(1);
+	printf("\033[0;0H"); // Move cursor to top right
+	printf("\033[2J"); // clear screen
+	printf("\x1B[?25h"); // re-enable cursor
+	exit(1);
 }
 
+int main( int argc, const char *argv[]) {
+	signal(SIGINT, intHandler);
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	[NSApplication sharedApplication];
+	[[[myThread alloc] init] start];
+	[NSApp run];
+	[pool release];
 
-int main( int argc, const char* argv[])
-{
-  signal(SIGINT, intHandler);
-  NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-  [NSApplication sharedApplication];
-  [[[myThread alloc] init] start];
-  [NSApp run];
-  [pool release];
-  return 0;
+	return 0;
 }
-

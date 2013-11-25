@@ -23,6 +23,7 @@
     int y;
     float bg;
     float fg;
+    float tmp;
     float mod;
     char* chr;
 
@@ -35,14 +36,18 @@
         fg = fmin(255, bg+1);
         mod = fmodf(bg, 1.0);
 
-        if (mod < 0.25) {
+        if (mod < 0.2) {
           chr = " ";
-        } else if (mod < 0.5) {
+        } else if (mod < 0.4) {
           chr = "░";
-        } else if (mod < 0.75) {
+        } else if (mod < 0.6) {
+          chr = "▒";
+        } else if (mod < 0.8) {
+          tmp = bg; bg = fg; fg = tmp;
           chr = "▒";
         } else {
-          chr = "▓";
+          tmp = bg; bg = fg; fg = tmp;
+          chr = "░";
         }
 
         printf("\033[48;5;%im\033[38;5;%im%s", (int)bg, (int)fg, chr);
